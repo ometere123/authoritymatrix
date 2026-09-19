@@ -68,7 +68,7 @@ def open_and_classify(contract, direct_vm, matrix_id, dimensions, *, action_hash
 
 
 def test_matrix_starts_as_draft(direct_vm, direct_deploy):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     matrix_id = contract.create_matrix("Ops", "Operational separation of duties.", 1, True)
     matrix = contract.get_matrix(matrix_id)
     assert matrix["status"] == 0
@@ -77,7 +77,7 @@ def test_matrix_starts_as_draft(direct_vm, direct_deploy):
 
 
 def test_only_owner_can_modify_draft(direct_vm, direct_deploy, direct_alice):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     matrix_id = contract.create_matrix("Ops", "Operational separation of duties.", 1, True)
     with direct_vm.prank(direct_alice):
         with direct_vm.expect_revert("only matrix owner"):
@@ -85,7 +85,7 @@ def test_only_owner_can_modify_draft(direct_vm, direct_deploy, direct_alice):
 
 
 def test_dimension_keys_are_unique_and_slug_like(direct_vm, direct_deploy):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     matrix_id = contract.create_matrix("Ops", "Operational separation of duties.", 1, True)
     contract.add_dimension(matrix_id, "money", "Review financial exposure.", 1)
     with direct_vm.expect_revert("already exists"):
@@ -95,7 +95,7 @@ def test_dimension_keys_are_unique_and_slug_like(direct_vm, direct_deploy):
 
 
 def test_matrix_cannot_seal_with_unsatisfied_threshold(direct_vm, direct_deploy):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     matrix_id = contract.create_matrix("Ops", "Operational separation of duties.", 1, True)
     contract.add_dimension(matrix_id, "money", "Review financial exposure.", 2)
     with direct_vm.expect_revert("threshold must be satisfiable"):
@@ -105,7 +105,7 @@ def test_matrix_cannot_seal_with_unsatisfied_threshold(direct_vm, direct_deploy)
 def test_matrix_cannot_seal_if_global_distinct_requirement_is_impossible(
     direct_vm, direct_deploy, direct_alice
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     matrix_id = contract.create_matrix("Ops", "Operational separation of duties.", 2, True)
     d = contract.add_dimension(matrix_id, "money", "Review financial exposure.", 1)
     contract.add_approver(matrix_id, d, direct_alice)
@@ -114,7 +114,7 @@ def test_matrix_cannot_seal_if_global_distinct_requirement_is_impossible(
 
 
 def test_sealed_matrix_is_immutable(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     with direct_vm.expect_revert("sealed and immutable"):
@@ -122,7 +122,7 @@ def test_sealed_matrix_is_immutable(direct_vm, direct_deploy, direct_alice, dire
 
 
 def test_seal_creates_definition_hash(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     matrix = contract.get_matrix(matrix_id)
@@ -132,7 +132,7 @@ def test_seal_creates_definition_hash(direct_vm, direct_deploy, direct_alice, di
 
 
 def test_action_rejects_non_hex_commitments(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     with direct_vm.expect_revert("context_hash"):
@@ -142,7 +142,7 @@ def test_action_rejects_non_hex_commitments(direct_vm, direct_deploy, direct_ali
 
 
 def test_action_hash_is_single_registration_key(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     contract.open_action(matrix_id, CTX, ACTION, "Pay 10 GEN.")
@@ -153,7 +153,7 @@ def test_action_hash_is_single_registration_key(direct_vm, direct_deploy, direct
 def test_in_scope_classification_selects_exact_required_dimensions(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     action_id = open_and_classify(contract, direct_vm, matrix_id, ["money", "security", "data"])
@@ -167,7 +167,7 @@ def test_in_scope_classification_selects_exact_required_dimensions(
 def test_validator_rederives_jurisdiction_not_just_json_shape(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
 
@@ -184,7 +184,7 @@ def test_validator_rederives_jurisdiction_not_just_json_shape(
 def test_unknown_dimension_from_model_fails_closed_to_ambiguous(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     direct_vm.mock_llm(CLASSIFIER, classification(dimensions=["money", "invented_power"]))
@@ -194,7 +194,7 @@ def test_unknown_dimension_from_model_fails_closed_to_ambiguous(
 
 
 def test_contradictory_model_shape_fails_closed(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     direct_vm.mock_llm(
@@ -209,7 +209,7 @@ def test_contradictory_model_shape_fails_closed(direct_vm, direct_deploy, direct
 def test_out_of_scope_action_is_never_auto_authorized(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     direct_vm.mock_llm(CLASSIFIER, classification(status="OUT_OF_SCOPE", dimensions=[]))
@@ -223,7 +223,7 @@ def test_out_of_scope_action_is_never_auto_authorized(
 def test_ambiguous_action_is_never_auto_authorized(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     direct_vm.mock_llm(CLASSIFIER, classification(status="AMBIGUOUS", dimensions=[]))
@@ -235,7 +235,7 @@ def test_ambiguous_action_is_never_auto_authorized(
 
 
 def test_unrequired_dimension_cannot_approve(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, security, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     action_id = open_and_classify(contract, direct_vm, matrix_id, ["money"])
@@ -247,7 +247,7 @@ def test_unrequired_dimension_cannot_approve(direct_vm, direct_deploy, direct_al
 def test_non_approver_cannot_approve_required_dimension(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, security, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     action_id = open_and_classify(contract, direct_vm, matrix_id, ["security"])
@@ -257,7 +257,7 @@ def test_non_approver_cannot_approve_required_dimension(
 
 
 def test_duplicate_approval_is_rejected(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, money, _, _ = create_matrix(contract, owner, direct_alice, direct_bob, min_distinct=2)
     action_id = open_and_classify(contract, direct_vm, matrix_id, ["money"])
@@ -268,7 +268,7 @@ def test_duplicate_approval_is_rejected(direct_vm, direct_deploy, direct_alice, 
 
 
 def test_all_dimension_thresholds_are_required(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, money, security, _ = create_matrix(
         contract, owner, direct_alice, direct_bob, min_distinct=2
@@ -287,7 +287,7 @@ def test_all_dimension_thresholds_are_required(direct_vm, direct_deploy, direct_
 def test_global_distinct_signer_floor_is_independent_of_dimension_thresholds(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     matrix_id = contract.create_matrix(
         "Cross-check",
         "Require two distinct people even when one person spans authority dimensions.",
@@ -316,7 +316,7 @@ def test_global_distinct_signer_floor_is_independent_of_dimension_thresholds(
 def test_maker_checker_rule_can_forbid_proposer_approval(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, money, _, _ = create_matrix(
         contract, owner, direct_alice, direct_bob, proposer_may_approve=False
@@ -334,7 +334,7 @@ def test_maker_checker_rule_can_forbid_proposer_approval(
 def test_approval_can_be_revoked_before_authorization(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, money, _, _ = create_matrix(contract, owner, direct_alice, direct_bob, min_distinct=2)
     action_id = open_and_classify(contract, direct_vm, matrix_id, ["money"])
@@ -349,7 +349,7 @@ def test_approval_can_be_revoked_before_authorization(
 def test_authorized_action_binds_context_action_and_matrix_hash(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, money, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     action_id = open_and_classify(contract, direct_vm, matrix_id, ["money"])
@@ -367,7 +367,7 @@ def test_authorized_action_binds_context_action_and_matrix_hash(
 def test_approvals_cannot_be_revoked_after_authorization(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, money, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     action_id = open_and_classify(contract, direct_vm, matrix_id, ["money"])
@@ -378,7 +378,7 @@ def test_approvals_cannot_be_revoked_after_authorization(
 
 
 def test_only_proposer_or_owner_can_cancel(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     with direct_vm.prank(direct_alice):
@@ -392,7 +392,7 @@ def test_only_proposer_or_owner_can_cancel(direct_vm, direct_deploy, direct_alic
 
 
 def test_action_can_only_be_classified_once(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     action_id = open_and_classify(contract, direct_vm, matrix_id, ["money"])
@@ -401,7 +401,7 @@ def test_action_can_only_be_classified_once(direct_vm, direct_deploy, direct_ali
 
 
 def test_owner_can_cancel_pending_action(direct_vm, direct_deploy, direct_alice, direct_bob):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     owner = direct_vm.sender
     matrix_id, _, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
     with direct_vm.prank(direct_alice):
@@ -411,7 +411,7 @@ def test_owner_can_cancel_pending_action(direct_vm, direct_deploy, direct_alice,
 
 
 def test_constants_are_stable(direct_vm, direct_deploy):
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
     constants = contract.get_constants()
     assert constants["MATRIX_DRAFT"] == 0
     assert constants["MATRIX_SEALED"] == 1

@@ -168,6 +168,25 @@ def hash_text(value: str) -> str:
     return Keccak256(str(value).encode("utf-8")).hexdigest()
 
 
+def address_key(value) -> str:
+    """Canonical 20-byte address identity for production Address objects and direct-test bytes."""
+    if hasattr(value, "as_bytes"):
+        raw = bytes(value.as_bytes)
+        if len(raw) == 20:
+            return raw.hex()
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        raw = bytes(value)
+        if len(raw) == 20:
+            return raw.hex()
+
+    text = str(value).strip().lower()
+    if text.startswith("0x") and len(text) == 42:
+        return text[2:]
+    if len(text) == 40 and all(ch in "0123456789abcdef" for ch in text):
+        return text
+    return text
+
+
 def dimension_bit(dimension_id: int) -> int:
     if dimension_id < 1 or dimension_id > MAX_DIMENSIONS:
         return 0
@@ -191,7 +210,7 @@ class AuthorityMatrix(gl.Contract):
     matrices: TreeMap[u256, Matrix]
     dimensions: TreeMap[str, Dimension]
     dimension_key_index: TreeMap[str, u32]
-    approvers: TreeMap[str, Address]
+    approvers: TreeMap[str, str]
     approver_membership: TreeMap[str, bool]
 
     actions: TreeMap[u256, Action]
@@ -215,11 +234,11 @@ class AuthorityMatrix(gl.Contract):
     def _approver_index_key(self, matrix_id: u256, dimension_id: int, index: int) -> str:
         return f"{int(matrix_id)}:{int(dimension_id)}:{int(index)}"
 
-    def _approver_membership_key(self, matrix_id: u256, dimension_id: int, account: Address) -> str:
-        return f"{int(matrix_id)}:{int(dimension_id)}:{str(account).lower()}"
+    def _approver_membership_key(self, matrix_id: u256, dimension_id: int, account) -> str:
+        return f"{int(matrix_id)}:{int(dimension_id)}:{address_key(account)}"
 
-    def _approval_key(self, action_id: u256, dimension_id: int, account: Address) -> str:
-        return f"{int(action_id)}:{int(dimension_id)}:{str(account).lower()}"
+    def _approval_key(self, action_id: u256, dimension_id: int, account) -> str:
+        return f"{int(action_id)}:{int(dimension_id)}:{address_key(account)}"
 
     def _approval_count_key(self, action_id: u256, dimension_id: int) -> str:
         return f"{int(action_id)}:{int(dimension_id)}"
@@ -252,11 +271,11 @@ class AuthorityMatrix(gl.Contract):
         if int(matrix.status) != MATRIX_DRAFT:
             raise gl.vm.UserError(f"{ERR_EXPECTED}: matrix is sealed and immutable")
 
-    def _get_approver(self, matrix_id: u256, dimension_id: int, index: int) -> Address:
+    def _get_approver(self, matrix_id: u256, dimension_id: int, index: int) -> str:
         value = self.approvers.get(self._approver_index_key(matrix_id, dimension_id, index))
         if value is None:
             raise gl.vm.UserError(f"{ERR_EXPECTED}: approver index missing")
-        return value
+        return str(value)
 
     def _is_approver(self, matrix_id: u256, dimension_id: int, account: Address) -> bool:
         return self.approver_membership.get(
@@ -280,7 +299,7 @@ class AuthorityMatrix(gl.Contract):
             dimension = self._require_dimension(matrix_id, local_id)
             addresses = []
             for index in range(1, int(dimension.approver_count) + 1):
-                addresses.append(str(self._get_approver(matrix_id, local_id, index)).lower())
+                addresses.append(self._get_approver(matrix_id, local_id, index))
             addresses.sort()
             dimensions.append({
                 "dimension_id": local_id,
@@ -433,11 +452,10 @@ ACTION_DESCRIPTION_JSON
                 continue
             dimension = self._require_dimension(matrix_id, local_id)
             for index in range(1, int(dimension.approver_count) + 1):
-                account = self._get_approver(matrix_id, local_id, index)
-                if self.approvals.get(self._approval_key(action_id, local_id, account)) is True:
-                    text = str(account).lower()
-                    if text not in seen:
-                        seen.append(text)
+                account_key = self._get_approver(matrix_id, local_id, index)
+                if self.approvals.get(self._approval_key(action_id, local_id, account_key)) is True:
+                    if account_key not in seen:
+                        seen.append(account_key)
         return len(seen)
 
     def _refresh_authorization(self, action_id: u256, action: Action, matrix: Matrix) -> None:
@@ -541,7 +559,7 @@ ACTION_DESCRIPTION_JSON
             raise gl.vm.UserError(f"{ERR_EXPECTED}: approver already exists in dimension")
 
         index = int(dimension.approver_count) + 1
-        self.approvers[self._approver_index_key(matrix_id, int(dimension_id), index)] = approver
+        self.approvers[self._approver_index_key(matrix_id, int(dimension_id), index)] = address_key(approver)
         self.approver_membership[
             self._approver_membership_key(matrix_id, int(dimension_id), approver)
         ] = True
@@ -562,7 +580,7 @@ ACTION_DESCRIPTION_JSON
             if int(dimension.approver_count) < int(dimension.threshold):
                 raise gl.vm.UserError(f"{ERR_EXPECTED}: every threshold must be satisfiable before sealing")
             for index in range(1, int(dimension.approver_count) + 1):
-                text = str(self._get_approver(matrix_id, local_id, index)).lower()
+                text = self._get_approver(matrix_id, local_id, index)
                 if text not in unique_approvers:
                     unique_approvers.append(text)
 
@@ -734,7 +752,7 @@ ACTION_DESCRIPTION_JSON
             dimension = self._require_dimension(matrix_id, local_id)
             addresses = []
             for index in range(1, int(dimension.approver_count) + 1):
-                addresses.append(str(self._get_approver(matrix_id, local_id, index)))
+                addresses.append(self._get_approver(matrix_id, local_id, index))
             dimensions.append({
                 "dimension_id": local_id,
                 "key": str(dimension.key),

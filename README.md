@@ -162,12 +162,16 @@ or:
 
 Before signing any transaction, confirm chain ID 61999.
 
+## Live deployment and reviewer evidence
+
+AuthorityMatrix is deployed on Studionet (61999) at [`0x7145EDB4B3d1D56000A0a3ab713B15Eb1b1B25a9`](https://explorer-studio.genlayer.com/address/0x7145EDB4B3d1D56000A0a3ab713B15Eb1b1B25a9). The deployment transaction [`0xe82d5d19e583268a4cccff0649493e6023a122eba51987fa6ff8af37cd0a73ad`](https://explorer-studio.genlayer.com/tx/0xe82d5d19e583268a4cccff0649493e6023a122eba51987fa6ff8af37cd0a73ad) finalized with MAJORITY_AGREE / SUCCESS.
+
+A live three-domain matrix (money, security, data) was sealed. A multi-domain action required mask 7; one distinct approver remained insufficient, while a second approver moved it to AUTHORIZED. Wrong action/context/matrix hashes returned false. Ambiguous and out-of-scope actions both failed closed. The AuthorityGate reference consumer is deployed at [`0x6Db3601D964AEE358f25A500b09C577C27dF3Ed0`](https://explorer-studio.genlayer.com/address/0x6Db3601D964AEE358f25A500b09C577C27dF3Ed0); live evidence shows rejection before authorization, exact authorized execution, and replay rejection.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for transaction-by-transaction evidence, readbacks, matrix definition hash, consumer proof, and verification record.
+
 ## What AuthorityMatrix is not
 
 AuthorityMatrix is not a DAO frontend, treasury, escrow, generic policy oracle, mandate system, or LLM multisig replacement.
 
 It does one job: map an exact natural-language action to the sealed authority domains that must approve it, then enforce those approvals deterministically.
-
-## Deployment status
-
-The source, test suite, security documentation, network lock, CI, and deployment tooling are included. A live address should only be added to DEPLOYMENT.md after an actual finalized Studionet deployment has been verified.

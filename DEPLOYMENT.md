@@ -64,9 +64,9 @@ Every transaction below was checked against the Studionet RPC and returned FINAL
 |---|---|---|
 | Create matrix 1 | [`0x59f48d7fe592a31721bb01f5d8e9611fafcae12ab6ae145d02787d2fc71a3aea`](https://explorer-studio.genlayer.com/tx/0x59f48d7fe592a31721bb01f5d8e9611fafcae12ab6ae145d02787d2fc71a3aea) | Matrix created |
 | Add money dimension | [`0xc9b9c6fc6c237e766d3644e101a8dc0e9785b2f04c347ad6e1683f02619492a2`](https://explorer-studio.genlayer.com/tx/0xc9b9c6fc6c237e766d3644e101a8dc0e9785b2f04c347ad6e1683f02619492a2) | Dimension 1 |
+| Add security dimension | [`0xad3c5aecc2324e663e75e27e4f730a4480aef2e3faf7c39f3b0e65f70bff7918`](https://explorer-studio.genlayer.com/tx/0xad3c5aecc2324e663e75e27e4f730a4480aef2e3faf7c39f3b0e65f70bff7918) | Matrix 1, dimension `security`, threshold 1; FINALIZED / MAJORITY_AGREE / SUCCESS |
+| Add data dimension | [`0xc942c979fea23728d242230126ab3424ef236a90d65bb75762a70655905a3a70`](https://explorer-studio.genlayer.com/tx/0xc942c979fea23728d242230126ab3424ef236a90d65bb75762a70655905a3a70) | Matrix 1, dimension `data`, threshold 1; FINALIZED / MAJORITY_AGREE / SUCCESS |
 | Seal matrix | [`0x50de1d9032f7cbe23a7f38e4f2cd6f07a0143cfe28583c8bd963626d5b821a44`](https://explorer-studio.genlayer.com/tx/0x50de1d9032f7cbe23a7f38e4f2cd6f07a0143cfe28583c8bd963626d5b821a44) | Readback: sealed, 3 dimensions |
-
-The transcript retained the matrix-creation, money-dimension, and seal transaction IDs, but not the individual security/data dimension-add transaction IDs. Those writes are evidenced by the sealed on-chain readback and are not assigned invented hashes here.
 
 Approver additions (Party A / Party B):
 

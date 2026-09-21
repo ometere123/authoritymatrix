@@ -21,7 +21,7 @@ A well-formed leader response that omits security while the validator independen
 
 ## Reusability
 
-Any consumer contract can pin a matrix hash and call is_authorized_for before performing a protected action.
+Any consumer contract can pin a matrix hash and call is_authorized_for with the exact action hash, expected description hash, and binding hash before performing a protected action. It must derive the expected description from the canonical payload it will execute.
 
 The included AuthorityGate demonstrates the consumer surface without turning the submission into a full app. There is no frontend.
 
@@ -30,7 +30,7 @@ The included AuthorityGate demonstrates the consumer surface without turning the
 - matrices are immutable after sealing;
 - out-of-scope never auto-authorizes;
 - ambiguous classification fails closed;
-- exact action and consumer context hashes are mandatory;
+- exact action, consumer context, and classified-description commitments are bound together;
 - matrix-wide distinct-signer floors prevent one cross-functional approver from satisfying a configured multi-person control alone;
 - proposer self-approval can be disabled;
 - approvals may be revoked only before authorization.

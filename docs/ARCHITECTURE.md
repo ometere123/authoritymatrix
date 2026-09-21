@@ -40,6 +40,7 @@ An action binds:
 - consumer context hash;
 - exact executable action hash;
 - hash of the frozen natural-language description;
+- a canonical binding hash over action, description, consumer context, and sealed matrix hashes;
 - consensus-derived required-dimension bitmask;
 - deterministic approval state.
 
@@ -72,9 +73,11 @@ The consumer-facing view requires:
     action_id
     context_hash
     action_hash
+    description_hash
+    binding_hash
     matrix_hash
 
-This prevents a valid approval from being casually reused for another payload, another matrix version, or another consumer context.
+AuthorityMatrix recomputes and checks the binding across the action hash, expected description hash, context hash, and matrix hash. AuthorityGate independently recomputes that same binding before asking the matrix to confirm authorization. The consumer must derive the expected description from the exact payload it is about to execute (for example, from a canonical deterministic formatter); passing caller-provided prose here would defeat the intended association.
 
 ## Why the matrix is immutable
 

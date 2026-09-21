@@ -14,17 +14,21 @@ ACTION = "22" * 32
 ACTION_2 = "33" * 32
 
 
-def commitment(context_hash, action_hash, description_hash):
+def keccak_text(value):
     from Crypto.Hash import keccak
+    digest = keccak.new(digest_bits=256)
+    digest.update(value.encode())
+    return digest.hexdigest()
+
+
+def commitment(context_hash, action_hash, description_hash):
     payload = json.dumps({
         "domain": "AuthorityMatrix.action-commitment.v1",
         "context_hash": context_hash,
         "action_hash": action_hash,
         "description_hash": description_hash,
-    }, sort_keys=True, separators=(",", ":")).encode()
-    digest = keccak.new(digest_bits=256)
-    digest.update(payload)
-    return digest.hexdigest()
+    }, sort_keys=True, separators=(",", ":"))
+    return keccak_text(payload)
 
 
 def classification(status="IN_SCOPE", dimensions=None, reason="relevant authority dimensions identified"):
@@ -359,7 +363,7 @@ def test_approval_can_be_revoked_before_authorization(
     assert contract.get_action(action_id)["requirements"][0]["approval_count"] == 0
 
 
-def test_authorized_action_binds_context_action_and_matrix_hash(
+def test_authorized_action_rejects_description_from_different_action_commitment(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
     contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
@@ -373,10 +377,15 @@ def test_authorized_action_binds_context_action_and_matrix_hash(
     assert action["status_name"] == "AUTHORIZED"
     expected_commitment = commitment(CTX, ACTION, action["description_hash"])
     assert action["action_commitment"] == expected_commitment
+    # Attack regression: substitute a benign cosmetic-action description after
+    # the payment action was classified and authorized. The frozen commitment
+    # must not authorize that different description for the payment hash.
+    benign_description_hash = keccak_text("Change the dashboard banner to blue.")
+    assert benign_description_hash != action["description_hash"]
     assert contract.is_authorized_for(action_id, CTX, ACTION, action["description_hash"], expected_commitment, action["matrix_hash"]) is True
     assert contract.is_authorized_for(action_id, "44" * 32, ACTION, action["description_hash"], expected_commitment, action["matrix_hash"]) is False
     assert contract.is_authorized_for(action_id, CTX, ACTION_2, action["description_hash"], expected_commitment, action["matrix_hash"]) is False
-    assert contract.is_authorized_for(action_id, CTX, ACTION, "66" * 32, expected_commitment, action["matrix_hash"]) is False
+    assert contract.is_authorized_for(action_id, CTX, ACTION, benign_description_hash, expected_commitment, action["matrix_hash"]) is False
     assert contract.is_authorized_for(action_id, CTX, ACTION, action["description_hash"], "77" * 32, action["matrix_hash"]) is False
     assert contract.is_authorized_for(action_id, CTX, ACTION, action["description_hash"], expected_commitment, "55" * 32) is False
 

@@ -37,7 +37,7 @@ The included AuthorityGate demonstrates the consumer surface without turning the
 
 ## Tests
 
-The Direct Mode suite covers configuration ownership, seal invariants, semantic consensus, contradictory classifier output, independent validator disagreement, threshold enforcement, cross-domain distinct-signer rules, maker-checker separation, revocation, exact binding, cancellation, and one-shot classification. The recorded final run passed 28/28 tests.
+The 28-test Direct Mode suite covers configuration ownership, seal invariants, semantic consensus, contradictory classifier output, independent validator disagreement, threshold enforcement, cross-domain distinct-signer rules, maker-checker separation, revocation, exact binding, cancellation, and one-shot classification. The named regression `test_authorized_action_rejects_description_from_different_action_commitment` authorizes a payment action, then proves a benign cosmetic-action description hash cannot authorize the same action hash and frozen commitment.
 
 ## Corrected Studionet deployment and verification
 
@@ -46,5 +46,7 @@ Studionet only: chain ID 61999, RPC https://studio.genlayer.com/api, explorer ht
 Corrected AuthorityMatrix: [`0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871`](https://explorer-studio.genlayer.com/address/0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871), deployment [`0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d`](https://explorer-studio.genlayer.com/tx/0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d), finalized successfully. Corrected AuthorityGate: [`0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e`](https://explorer-studio.genlayer.com/address/0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e), deployment [`0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a`](https://explorer-studio.genlayer.com/tx/0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a), finalized successfully.
 
 The deployed consumer successfully executed an authorized action with matching hashes, then rejected another authorized action when the expected description hash was changed while retaining the original action commitment. The rejection finalized with `EXPECTED: AuthorityMatrix authorization is not valid for this consumer`; its execution record remained absent. Full transaction and readback details are in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+The current-main Direct Mode and preflight results are reported by the newest [GitHub Actions run for `main`](https://github.com/ometere123/authoritymatrix/actions/workflows/ci.yml?query=branch%3Amain). This replaces the pre-fix test and CI record.
 
 The old addresses above are superseded pre-fix deployments; see [DEPLOYMENT.md](DEPLOYMENT.md) for their historical record and the complete corrected deployment proof.

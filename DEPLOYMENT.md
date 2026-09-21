@@ -108,25 +108,25 @@ Three separate `is_authorized_for` read checks returned false when respectively 
 
 ## Verification record
 
-The repository's final verification in this task reported:
+The following verification is historical pre-fix evidence and does not validate current main:
 
-- `python scripts/preflight.py`: PASS
-- `python -m compileall contracts scripts tests`: PASS
-- Direct Mode: 28/28 passed using the repository-pinned `genlayer-test==0.29.2` environment.
-- GitHub Actions on source commit `0ada2a68b2a34aeea52a27ad55e1a453267b6a3a`: PASS, run [35471002444](https://github.com/ometere123/authoritymatrix/actions/runs/35471002444).
+- Historical source commit: `0ada2a68b2a34aeea52a27ad55e1a453267b6a3a`.
+- Historical GitHub Actions run: [35471002444](https://github.com/ometere123/authoritymatrix/actions/runs/35471002444).
 
-A separate locally installed Direct Mode plugin version did not match the repository pin and failed; it was not used as the passing result. No frontend was added.
+This record is superseded by current-main verification below. No frontend was added.
 
 ## Corrected deployment
 
 The corrected interface stores a domain-separated commitment over `context_hash`, `action_hash`, and the Keccak-256 hash of the normalized classified description. `is_authorized_for` requires the expected description hash and expected commitment, checks both against stored state, and recomputes the commitment. `AuthorityGate.execute` requires and forwards both values before recording execution.
 
-The corrected deployment and end-to-end binding proof have now been completed on Studionet (61999) using the repository-local GenLayer CLI 0.39.1.
+The corrected deployment and end-to-end binding proof have now been completed on Studionet (61999) using the repository-local GenLayer CLI 0.39.1. The source returned by each deployed address was retrieved and compared to commit `82ed8647403540b1378ab6f37aa30efc2eb800df`; after normalizing deployed CRLF line endings to LF, both deployed files equal their Git blobs byte-for-byte.
 
-| Contract | Address | Deployment transaction | Result |
-|---|---|---|---|
-| AuthorityMatrix | [`0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871`](https://explorer-studio.genlayer.com/address/0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871) | [`0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d`](https://explorer-studio.genlayer.com/tx/0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d) | FINALIZED / MAJORITY_AGREE / SUCCESS |
-| AuthorityGate | [`0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e`](https://explorer-studio.genlayer.com/address/0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e) | [`0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a`](https://explorer-studio.genlayer.com/tx/0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a) | FINALIZED / MAJORITY_AGREE / SUCCESS |
+| Contract | Source commit | Contract address | Deployment transaction | Chain ID | Status | Deployed UTF-8 source bytes | Deployed source SHA-256 | Main Git blob bytes / SHA-256 |
+|---|---|---|---|---:|---|---:|---|---|
+| AuthorityMatrix | `82ed8647403540b1378ab6f37aa30efc2eb800df` | [`0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871`](https://explorer-studio.genlayer.com/address/0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871) | [`0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d`](https://explorer-studio.genlayer.com/tx/0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d) | 61999 | FINALIZED / MAJORITY_AGREE / SUCCESS | 38,569 | `DFAEAF679CC982C1BC9572312B363640B7E5745A27158A8EB4698E86BC3A73E9` | 37,730 / `B020474AEABE5462D14B501D80C493A3A1773AF5E82B438B46B393DA713DB61C` |
+| AuthorityGate | `82ed8647403540b1378ab6f37aa30efc2eb800df` | [`0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e`](https://explorer-studio.genlayer.com/address/0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e) | [`0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a`](https://explorer-studio.genlayer.com/tx/0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a) | 61999 | FINALIZED / MAJORITY_AGREE / SUCCESS | 4,477 | `36F062BFEA55DDC1EDCF300C7EA4B51B3C804ED5F60FE42AA5A0FDF3051FC3E6` | 4,385 / `496E73101112C1FAD8AF917C97C4E21A6551DB304F145E61EAE7AA3AC1E249C9` |
+
+Deployed source byte counts and hashes are computed from the exact UTF-8 source fetched from Studionet. Git stores normalized LF blobs, so these differ in byte count/hash from the deployed CRLF representation; CRLF-to-LF normalization yields exact equality with the respective source blob at the stated commit.
 
 The gate is bound to context hash `9d0b60fc4e8005409a78683d53aa781bf5ff69f431a8ca3079f5285857f46dca`. Its deployed schema was read back and contains the corrected `execute(action_id, expected_action_hash, expected_description_hash, expected_action_commitment, expected_matrix_hash)` interface.
 
@@ -142,3 +142,9 @@ The matching Action 1 call to `AuthorityGate.execute` finalized successfully in 
 For Action 2, the gate was called with a deliberately altered description hash and the original action commitment. Transaction [`0xd3da2fdf2a629fa2d6571b4e35577c4c0ef8941f7ebac9e90b768fef428949b7`](https://explorer-studio.genlayer.com/tx/0xd3da2fdf2a629fa2d6571b4e35577c4c0ef8941f7ebac9e90b768fef428949b7) finalized with MAJORITY_AGREE and the expected execution error `EXPECTED: AuthorityMatrix authorization is not valid for this consumer`. Readback confirmed `was_executed(33…33)=false`. Thus the same already-authorized action is rejected when the consumer-supplied description binding is changed.
 
 An earlier gate deployment attempt, transaction `0xbb16a88f29d4c237c20be38a6c027f6206fca8f8887d8701f837d7c4fb26f29c`, finalized with execution error and did not create a contract. The valid gate address and proof above supersede that failed attempt.
+
+### Current-main automated verification
+
+The current suite contains 28 tests, including `test_authorized_action_rejects_description_from_different_action_commitment`. The newest [AuthorityMatrix CI run for `main`](https://github.com/ometere123/authoritymatrix/actions/workflows/ci.yml?query=branch%3Amain) is the current-main preflight and Direct Mode evidence; it supersedes the historical run listed above.
+
+On this Windows/WSL workstation, the local Direct Mode runner fails during GenLayer harness initialization (`DecodingError: unexpected end of memory`) before contract tests execute. The GitHub Actions Linux runner is the passing Direct Mode result for current main. Python compile and repository preflight are also run locally before publication.

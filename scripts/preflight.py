@@ -42,6 +42,7 @@ def main():
     require(tests.count("def test_") >= 24, "substantial direct-mode suite is present")
     require("test_validator_rederives_jurisdiction_not_just_json_shape" in tests, "independent validator regression exists")
     require("test_global_distinct_signer_floor_is_independent_of_dimension_thresholds" in tests, "cross-domain distinct signer regression exists")
+    require("test_authorized_action_rejects_description_from_different_action_commitment" in tests, "mismatched description/action commitment attack regression exists")
     require("no frontend" in readme.lower(), "README explains standalone primitive scope")
     require("https://studio.genlayer.com/api" in config, "Studionet RPC is configured")
     require("genlayer network set studionet" in deploy, "deploy helper explicitly selects Studionet")

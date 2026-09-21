@@ -15,7 +15,7 @@ The contract is designed against:
 - same-signer cross-domain collapse when a distinct-signer floor is configured;
 - proposer self-approval when maker-checker separation is enabled;
 - action-hash replay inside the registry;
-- consumer use under a mismatched matrix, context, or action commitment.
+- consumer use under a mismatched matrix, context, action commitment, or classified-description commitment.
 
 ## Consensus safety
 
@@ -29,7 +29,7 @@ Threshold satisfaction, approver membership, duplicate prevention, distinct-sign
 
 ## Known limits
 
-AuthorityMatrix cannot prove that an externally supplied action hash actually corresponds to the prose description. The consuming integration must compute that hash over its canonical executable payload and bind the same value at execution time.
+AuthorityMatrix stores a canonical binding hash over the action hash, frozen description hash, consumer context hash, and sealed matrix definition hash. AuthorityGate independently recomputes the binding and AuthorityMatrix verifies the exact stored pair. A consumer must derive its expected description hash from the exact canonical executable payload, not accept unrelated prose or a description hash from an untrusted caller. This cryptographically prevents pair substitution after classification; it does not prove that arbitrary prose truthfully describes arbitrary payload bytes.
 
 The context hash is also only as strong as the canonical context encoded by the integrator. It should include chain identity, consumer identity/version, and operation family where appropriate.
 

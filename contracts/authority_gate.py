@@ -14,6 +14,8 @@ class IAuthorityMatrix:
             action_id: u256,
             expected_context_hash: str,
             expected_action_hash: str,
+            expected_description_hash: str,
+            expected_action_commitment: str,
             expected_matrix_hash: str,
         ) -> bool: ...
 
@@ -27,6 +29,8 @@ class ExecutionReceipt:
     caller: Address
     action_id: u256
     action_hash: str
+    description_hash: str
+    action_commitment: str
     matrix_hash: str
     context_hash: str
 
@@ -56,14 +60,18 @@ class AuthorityGate(gl.Contract):
         self,
         action_id: u256,
         expected_action_hash: str,
+        expected_description_hash: str,
+        expected_action_commitment: str,
         expected_matrix_hash: str,
     ) -> None:
         action_hash = str(expected_action_hash).strip().lower()
+        description_hash = str(expected_description_hash).strip().lower()
+        commitment = str(expected_action_commitment).strip().lower()
         matrix_hash = str(expected_matrix_hash).strip().lower()
 
-        if len(action_hash) != 64 or len(matrix_hash) != 64:
-            raise gl.vm.UserError("EXPECTED: action and matrix hashes must be 64 lowercase hex chars")
-        for text in (action_hash, matrix_hash):
+        if any(len(value) != 64 for value in (action_hash, description_hash, commitment, matrix_hash)):
+            raise gl.vm.UserError("EXPECTED: action, description, commitment, and matrix hashes must be 64 lowercase hex chars")
+        for text in (action_hash, description_hash, commitment, matrix_hash):
             for char in text:
                 if char not in "0123456789abcdef":
                     raise gl.vm.UserError("EXPECTED: hashes must be lowercase hex")
@@ -76,6 +84,8 @@ class AuthorityGate(gl.Contract):
             action_id,
             str(self.context_hash),
             action_hash,
+            description_hash,
+            commitment,
             matrix_hash,
         ):
             raise gl.vm.UserError("EXPECTED: AuthorityMatrix authorization is not valid for this consumer")
@@ -84,6 +94,8 @@ class AuthorityGate(gl.Contract):
             caller=gl.message.sender_address,
             action_id=action_id,
             action_hash=action_hash,
+            description_hash=description_hash,
+            action_commitment=commitment,
             matrix_hash=matrix_hash,
             context_hash=str(self.context_hash),
         )
@@ -104,6 +116,8 @@ class AuthorityGate(gl.Contract):
             "caller": str(receipt.caller),
             "action_id": int(receipt.action_id),
             "action_hash": str(receipt.action_hash),
+            "description_hash": str(receipt.description_hash),
+            "action_commitment": str(receipt.action_commitment),
             "matrix_hash": str(receipt.matrix_hash),
             "context_hash": str(receipt.context_hash),
         }

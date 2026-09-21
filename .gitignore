@@ -3,5 +3,7 @@
 __pycache__/
 .pytest_cache/
 artifacts/
+.genlayer-stable/node_modules/
+/npm
 *.pyc
 .DS_Store

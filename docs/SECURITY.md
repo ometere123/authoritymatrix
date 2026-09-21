@@ -29,10 +29,10 @@ Threshold satisfaction, approver membership, duplicate prevention, distinct-sign
 
 ## Known limits
 
-AuthorityMatrix cannot prove that an externally supplied action hash actually corresponds to the prose description. The consuming integration must compute that hash over its canonical executable payload and bind the same value at execution time.
+AuthorityMatrix binds the supplied action hash, context hash, and normalized description hash into an on-chain commitment and requires the consumer to verify that same tuple at execution. It still cannot prove independently that the submitted prose truthfully describes an executable payload. The consuming integration must derive or display the description from the canonical payload, compute the payload hash itself, and pass both expected hashes and the commitment when executing.
 
 The context hash is also only as strong as the canonical context encoded by the integrator. It should include chain identity, consumer identity/version, and operation family where appropriate.
 
-The contract does not discover omitted facts. If a proposer describes an executable payload dishonestly, the semantic classifier only sees the submitted frozen description. A secure integration therefore displays or derives the description from the canonical payload rather than accepting arbitrary prose from an untrusted agent.
+The contract does not discover omitted facts. If a proposer describes an executable payload dishonestly, the semantic classifier only sees the submitted frozen description. The commitment guarantees binding of that exact description to the payload hash; it does not guarantee the description's truthfulness. A secure integration therefore derives the description from the canonical payload rather than accepting arbitrary prose from an untrusted agent.
 
 The primitive does not replace wallet signatures, role-based access control, or consumer-side replay protection. AuthorityGate demonstrates one minimal replay-safe consumer pattern.

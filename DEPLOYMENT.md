@@ -19,7 +19,11 @@ pytest tests/direct/ -v -s
 
 Deployment used GenLayer CLI 0.39.1. Before deployment, the RPC `eth_chainId` was checked as `0xf22f` (decimal 61999).
 
-## AuthorityMatrix — live deployment
+## Superseded AuthorityMatrix deployment
+
+The address and evidence below are for the pre-fix interface. That deployment independently accepted description and action hash and must not be used as evidence for the description/action commitment review requirement. Deploy a new AuthorityMatrix from current source and a new AuthorityGate configured for its address; existing immutable deployments cannot acquire the revised logic.
+
+## Historical AuthorityMatrix deployment
 
 - Address: [`0x7145EDB4B3d1D56000A0a3ab713B15Eb1b1B25a9`](https://explorer-studio.genlayer.com/address/0x7145EDB4B3d1D56000A0a3ab713B15Eb1b1B25a9)
 - Deployment transaction: [`0xe82d5d19e583268a4cccff0649493e6023a122eba51987fa6ff8af37cd0a73ad`](https://explorer-studio.genlayer.com/tx/0xe82d5d19e583268a4cccff0649493e6023a122eba51987fa6ff8af37cd0a73ad)
@@ -54,7 +58,7 @@ Distinct approvers:
 - Party A: `0xac3ac69dc0bde389256dd6748c75817ead9286d9`
 - Party B: `0xa7eeae0e93793e3146cb14b0700251b8b0ebadfb`
 
-## Live Studionet lifecycle evidence
+## Historical Studionet lifecycle evidence
 
 Every transaction below was checked against the Studionet RPC and returned FINALIZED. Links point to the Studionet explorer.
 
@@ -93,7 +97,7 @@ Three separate `is_authorized_for` read checks returned false when respectively 
 - Ambiguous action (“Do the thing we discussed”): open [`0xc4a81fa75799db25c5af7a54bcf708307ee3add02ecd76d7998a0539bbdae65e`](https://explorer-studio.genlayer.com/tx/0xc4a81fa75799db25c5af7a54bcf708307ee3add02ecd76d7998a0539bbdae65e), classify [`0xbbfb6545a7066a9588f4016ee6e9b34902cdd928eeba5c2484d1aaac65640937`](https://explorer-studio.genlayer.com/tx/0xbbfb6545a7066a9588f4016ee6e9b34902cdd928eeba5c2484d1aaac65640937); readback AMBIGUOUS, mask 0, authorization false.
 - Out-of-scope cosmetic action explicitly excluding money/security/data: open [`0x7fb79bafc02baf402c28eb6323e6b7872fc60279d1f22d2fda4653b5efec54bc`](https://explorer-studio.genlayer.com/tx/0x7fb79bafc02baf402c28eb6323e6b7872fc60279d1f22d2fda4653b5efec54bc), classify [`0xf0694872e622b23cf2dcbd46ac6b9570a2bae56e80f184be8fc9b58e21861c97`](https://explorer-studio.genlayer.com/tx/0xf0694872e622b23cf2dcbd46ac6b9570a2bae56e80f184be8fc9b58e21861c97); readback OUT_OF_SCOPE, mask 0, authorization false.
 
-### AuthorityGate reference consumer
+### Historical AuthorityGate reference consumer
 
 - Address: [`0x6Db3601D964AEE358f25A500b09C577C27dF3Ed0`](https://explorer-studio.genlayer.com/address/0x6Db3601D964AEE358f25A500b09C577C27dF3Ed0)
 - Deployment: [`0xdbe358be0682f3f33dc9f8981a667e527aad035f771c534ceace0b0346719004`](https://explorer-studio.genlayer.com/tx/0xdbe358be0682f3f33dc9f8981a667e527aad035f771c534ceace0b0346719004), FINALIZED / MAJORITY_AGREE / SUCCESS
@@ -112,3 +116,29 @@ The repository's final verification in this task reported:
 - GitHub Actions on source commit `0ada2a68b2a34aeea52a27ad55e1a453267b6a3a`: PASS, run [35471002444](https://github.com/ometere123/authoritymatrix/actions/runs/35471002444).
 
 A separate locally installed Direct Mode plugin version did not match the repository pin and failed; it was not used as the passing result. No frontend was added.
+
+## Corrected deployment
+
+The corrected interface stores a domain-separated commitment over `context_hash`, `action_hash`, and the Keccak-256 hash of the normalized classified description. `is_authorized_for` requires the expected description hash and expected commitment, checks both against stored state, and recomputes the commitment. `AuthorityGate.execute` requires and forwards both values before recording execution.
+
+The corrected deployment and end-to-end binding proof have now been completed on Studionet (61999) using the repository-local GenLayer CLI 0.39.1.
+
+| Contract | Address | Deployment transaction | Result |
+|---|---|---|---|
+| AuthorityMatrix | [`0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871`](https://explorer-studio.genlayer.com/address/0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871) | [`0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d`](https://explorer-studio.genlayer.com/tx/0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d) | FINALIZED / MAJORITY_AGREE / SUCCESS |
+| AuthorityGate | [`0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e`](https://explorer-studio.genlayer.com/address/0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e) | [`0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a`](https://explorer-studio.genlayer.com/tx/0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a) | FINALIZED / MAJORITY_AGREE / SUCCESS |
+
+The gate is bound to context hash `9d0b60fc4e8005409a78683d53aa781bf5ff69f431a8ca3079f5285857f46dca`. Its deployed schema was read back and contains the corrected `execute(action_id, expected_action_hash, expected_description_hash, expected_action_commitment, expected_matrix_hash)` interface.
+
+### On-chain matching and mismatch proof
+
+A fresh matrix `1` was created and sealed with definition hash `990eb237c95c6819d354573733cc5596d2e172d3f723b308c6d4993eb642a447`, one `scope` dimension, threshold 1, and the deployment account as approver. Two actions were opened under the gate's fixed context, semantically classified, and authorized:
+
+- Action 1: `Pay 40 GEN from treasury to an external vendor.` Action hash `22…22`; description hash `d2dc0ab8e40354a8b0d95e0d9b4240261b3dac0db6dd92f14894ebfb8b4ee3d5`; commitment `5933e947419f5b7eb97a216631601463628225cdaa961a23e732a47da39027f3`.
+- Action 2: `Transfer 15 GEN from treasury to the approved supplier.` Action hash `33…33`; description hash `e905217b87af0be2dbb1c65f248d086fdb1e3caec1d4935b60b6af96bfb61158`; commitment `02e2039150fe91ad9de884cba922e3f680ed52320880dcbc39eeead53f71c2a8`.
+
+The matching Action 1 call to `AuthorityGate.execute` finalized successfully in transaction [`0x53aed9ab908be554ab515766359930b943a8921ec6775e3df6b82cc34ae0aef0`](https://explorer-studio.genlayer.com/tx/0x53aed9ab908be554ab515766359930b943a8921ec6775e3df6b82cc34ae0aef0). `get_execution(22…22)` read back the exact action hash, description hash, commitment, context hash, matrix hash, and action ID; `was_executed(22…22)` returned true.
+
+For Action 2, the gate was called with a deliberately altered description hash and the original action commitment. Transaction [`0xd3da2fdf2a629fa2d6571b4e35577c4c0ef8941f7ebac9e90b768fef428949b7`](https://explorer-studio.genlayer.com/tx/0xd3da2fdf2a629fa2d6571b4e35577c4c0ef8941f7ebac9e90b768fef428949b7) finalized with MAJORITY_AGREE and the expected execution error `EXPECTED: AuthorityMatrix authorization is not valid for this consumer`. Readback confirmed `was_executed(33…33)=false`. Thus the same already-authorized action is rejected when the consumer-supplied description binding is changed.
+
+An earlier gate deployment attempt, transaction `0xbb16a88f29d4c237c20be38a6c027f6206fca8f8887d8701f837d7c4fb26f29c`, finalized with execution error and did not create a contract. The valid gate address and proof above supersede that failed attempt.

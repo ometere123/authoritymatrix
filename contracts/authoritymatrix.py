@@ -69,6 +69,7 @@ class Action:
     context_hash: str
     action_hash: str
     description_hash: str
+    action_commitment: str
     description: str
     status: u8
     required_mask: u256
@@ -88,6 +89,8 @@ class IAuthorityMatrix:
             action_id: u256,
             expected_context_hash: str,
             expected_action_hash: str,
+            expected_description_hash: str,
+            expected_action_commitment: str,
             expected_matrix_hash: str,
         ) -> bool: ...
 
@@ -166,6 +169,17 @@ def require_hex_digest(value: str, label: str) -> str:
 
 def hash_text(value: str) -> str:
     return Keccak256(str(value).encode("utf-8")).hexdigest()
+
+
+def action_commitment(context_hash: str, action_hash: str, description_hash: str) -> str:
+    """Domain-separated binding between executable payload, context, and classified prose."""
+    payload = json.dumps({
+        "domain": "AuthorityMatrix.action-commitment.v1",
+        "context_hash": str(context_hash),
+        "action_hash": str(action_hash),
+        "description_hash": str(description_hash),
+    }, sort_keys=True, separators=(",", ":"))
+    return hash_text(payload)
 
 
 def address_key(value) -> str:
@@ -624,6 +638,9 @@ ACTION_DESCRIPTION_JSON
         action.context_hash = context_hash
         action.action_hash = action_hash
         action.description_hash = hash_text(description)
+        action.action_commitment = action_commitment(
+            context_hash, action_hash, str(action.description_hash)
+        )
         action.description = description
         action.status = u8(ACTION_PENDING)
         action.required_mask = u256(0)
@@ -639,6 +656,8 @@ ACTION_DESCRIPTION_JSON
             matrix_hash=str(matrix.definition_hash),
             context_hash=context_hash,
             action_hash=action_hash,
+            description_hash=str(action.description_hash),
+            action_commitment=str(action.action_commitment),
         ).emit()
         return action_id
 
@@ -803,6 +822,7 @@ ACTION_DESCRIPTION_JSON
             "context_hash": str(action.context_hash),
             "action_hash": str(action.action_hash),
             "description_hash": str(action.description_hash),
+            "action_commitment": str(action.action_commitment),
             "description": str(action.description),
             "status": int(action.status),
             "status_name": action_status_name(int(action.status)),
@@ -828,6 +848,8 @@ ACTION_DESCRIPTION_JSON
         action_id: u256,
         expected_context_hash: str,
         expected_action_hash: str,
+        expected_description_hash: str,
+        expected_action_commitment: str,
         expected_matrix_hash: str,
     ) -> bool:
         action = self._require_action(action_id)
@@ -835,12 +857,17 @@ ACTION_DESCRIPTION_JSON
             return False
         context_hash = str(expected_context_hash).strip().lower()
         action_hash = str(expected_action_hash).strip().lower()
+        description_hash = str(expected_description_hash).strip().lower()
+        commitment = str(expected_action_commitment).strip().lower()
         matrix_hash = str(expected_matrix_hash).strip().lower()
-        if len(context_hash) != 64 or len(action_hash) != 64 or len(matrix_hash) != 64:
+        if any(len(value) != 64 for value in (context_hash, action_hash, description_hash, commitment, matrix_hash)):
             return False
         return (
             str(action.context_hash) == context_hash
             and str(action.action_hash) == action_hash
+            and str(action.description_hash) == description_hash
+            and str(action.action_commitment) == commitment
+            and str(action.action_commitment) == action_commitment(context_hash, action_hash, description_hash)
             and str(action.matrix_hash) == matrix_hash
         )
 

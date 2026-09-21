@@ -8,7 +8,7 @@ AuthorityMatrix is a reusable semantic separation-of-duties primitive that deter
 
 A normal smart contract can count signatures but cannot reliably determine that a natural-language action simultaneously touches finance, security, and data authority when the wording is not reducible to fixed selectors.
 
-AuthorityMatrix uses GenLayer only for that semantic jurisdiction boundary. Validators independently derive the exact required-dimension mask. Approval thresholds, signers, immutable matrix definitions, action/context binding, and authorization are deterministic.
+AuthorityMatrix uses GenLayer only for that semantic jurisdiction boundary. Validators independently derive the exact required-dimension mask. Approval thresholds, signers, immutable matrix definitions, description/action/context commitment, and authorization are deterministic.
 
 ## Non-trivial consensus
 
@@ -21,7 +21,7 @@ A well-formed leader response that omits security while the validator independen
 
 ## Reusability
 
-Any consumer contract can pin a matrix hash and call is_authorized_for before performing a protected action.
+Any consumer contract can pin a matrix hash and call `is_authorized_for` before performing a protected action. The view requires the expected description hash and verifies a domain-separated commitment over the context hash, executable action hash, and classified description hash.
 
 The included AuthorityGate demonstrates the consumer surface without turning the submission into a full app. There is no frontend.
 
@@ -30,7 +30,7 @@ The included AuthorityGate demonstrates the consumer surface without turning the
 - matrices are immutable after sealing;
 - out-of-scope never auto-authorizes;
 - ambiguous classification fails closed;
-- exact action and consumer context hashes are mandatory;
+- exact action and consumer context hashes, plus the classified description hash commitment, are mandatory;
 - matrix-wide distinct-signer floors prevent one cross-functional approver from satisfying a configured multi-person control alone;
 - proposer self-approval can be disabled;
 - approvals may be revoked only before authorization.
@@ -39,12 +39,12 @@ The included AuthorityGate demonstrates the consumer surface without turning the
 
 The Direct Mode suite covers configuration ownership, seal invariants, semantic consensus, contradictory classifier output, independent validator disagreement, threshold enforcement, cross-domain distinct-signer rules, maker-checker separation, revocation, exact binding, cancellation, and one-shot classification. The recorded final run passed 28/28 tests.
 
-## Network and live deployment
+## Corrected Studionet deployment and verification
 
 Studionet only: chain ID 61999, RPC https://studio.genlayer.com/api, explorer https://explorer-studio.genlayer.com/.
 
-AuthorityMatrix: [`0x7145EDB4B3d1D56000A0a3ab713B15Eb1b1B25a9`](https://explorer-studio.genlayer.com/address/0x7145EDB4B3d1D56000A0a3ab713B15Eb1b1B25a9). Deployment transaction: [`0xe82d5d19e583268a4cccff0649493e6023a122eba51987fa6ff8af37cd0a73ad`](https://explorer-studio.genlayer.com/tx/0xe82d5d19e583268a4cccff0649493e6023a122eba51987fa6ff8af37cd0a73ad), FINALIZED / MAJORITY_AGREE / SUCCESS.
+Corrected AuthorityMatrix: [`0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871`](https://explorer-studio.genlayer.com/address/0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871), deployment [`0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d`](https://explorer-studio.genlayer.com/tx/0x09c046e163a1bf5cbebe4831928317a30c2ad2d179055a982d9bb356dee5300d), finalized successfully. Corrected AuthorityGate: [`0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e`](https://explorer-studio.genlayer.com/address/0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e), deployment [`0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a`](https://explorer-studio.genlayer.com/tx/0xdc05bbbfe562cc9c59592f0cb439704e9065888bdc5f594a4afa4c274e4dc75a), finalized successfully.
 
-A sealed matrix with money, security, and data dimensions classified one cross-domain action with mask 7. One signer was insufficient; two distinct signers satisfied all thresholds. Wrong hash bindings returned false, and ambiguous/out-of-scope actions remained unauthorized. AuthorityGate at [`0x6Db3601D964AEE358f25A500b09C577C27dF3Ed0`](https://explorer-studio.genlayer.com/address/0x6Db3601D964AEE358f25A500b09C577C27dF3Ed0) rejected an unauthorized action, executed the authorized action once, and rejected replay.
+The deployed consumer successfully executed an authorized action with matching hashes, then rejected another authorized action when the expected description hash was changed while retaining the original action commitment. The rejection finalized with `EXPECTED: AuthorityMatrix authorization is not valid for this consumer`; its execution record remained absent. Full transaction and readback details are in [DEPLOYMENT.md](DEPLOYMENT.md).
 
-The deployed contract source is commit `0ada2a68b2a34aeea52a27ad55e1a453267b6a3a`; see [DEPLOYMENT.md](DEPLOYMENT.md) for exact source hash, definition hash, transaction links, statuses, and readback details.
+The old addresses above are superseded pre-fix deployments; see [DEPLOYMENT.md](DEPLOYMENT.md) for their historical record and the complete corrected deployment proof.

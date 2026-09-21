@@ -4,7 +4,7 @@ AuthorityMatrix is a reusable GenLayer Intelligent Contract for semantic separat
 
 A normal multisig answers one question: did enough keys approve? AuthorityMatrix answers a harder question first: which independent authority domains does this exact action touch?
 
-The authority matrix is configured deterministically. Each dimension has its own approvers and threshold. A proposed action is bound to an exact action hash, consumer context hash, and immutable sealed matrix hash. GenLayer consensus only classifies semantic jurisdiction. It never chooses approvers, thresholds, or whether missing approvals can be bypassed.
+The authority matrix is configured deterministically. Each dimension has its own approvers and threshold. A proposed action binds the exact action hash, consumer context hash, and normalized description hash into a domain-separated on-chain action commitment, alongside the immutable sealed matrix hash. GenLayer consensus only classifies semantic jurisdiction. It never chooses approvers, thresholds, or whether missing approvals can be bypassed.
 
 There is **no frontend**. This repository is intentionally a standalone Intelligent Contract primitive.
 
@@ -56,6 +56,7 @@ The action does not become authorised until every required dimension reaches its
 10. A matrix may forbid the proposer from approving their own action.
 11. An exact action hash can only be registered once.
 12. Approvals may be revoked while pending, but not after authorisation.
+13. Consumer authorization verifies the description hash and recomputes the action commitment from the context, executable payload hash, and classified description hash.
 
 ## Contract lifecycle
 
@@ -104,10 +105,12 @@ Consumers call:
         action_id,
         expected_context_hash,
         expected_action_hash,
+        expected_description_hash,
+        expected_action_commitment,
         expected_matrix_hash,
     )
 
-The included AuthorityGate contract is a minimal consumer. It proves a second Intelligent Contract can reject an unauthorised or mismatched action and prevent local replay.
+The included AuthorityGate accepts the expected description hash and action commitment and passes both to the registry view. The registry checks that they match stored values and recomputes the commitment from the registered context, action hash, and normalized classified description hash.
 
 The context hash should commit to the intended consumer domain, for example:
 
@@ -150,9 +153,14 @@ Optional linter:
 
 ## Deploy to Studionet
 
+Install the pinned project-local CLI on Windows:
+
+    npm ci --prefix .genlayer-stable
+    .\.genlayer-stable\node_modules\.bin\genlayer.cmd --version
+
 Use:
 
-    bash scripts/deploy_studionet.sh
+    .\.genlayer-stable\node_modules\.bin\genlayer.cmd deploy --contract contracts/authoritymatrix.py --rpc https://studio.genlayer.com/api
 
 or:
 
@@ -164,9 +172,9 @@ Before signing any transaction, confirm chain ID 61999.
 
 ## Live deployment and reviewer evidence
 
-AuthorityMatrix is deployed on Studionet (61999) at [`0x7145EDB4B3d1D56000A0a3ab713B15Eb1b1B25a9`](https://explorer-studio.genlayer.com/address/0x7145EDB4B3d1D56000A0a3ab713B15Eb1b1B25a9). The deployment transaction [`0xe82d5d19e583268a4cccff0649493e6023a122eba51987fa6ff8af37cd0a73ad`](https://explorer-studio.genlayer.com/tx/0xe82d5d19e583268a4cccff0649493e6023a122eba51987fa6ff8af37cd0a73ad) finalized with MAJORITY_AGREE / SUCCESS.
+The corrected AuthorityMatrix is deployed at [`0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871`](https://explorer-studio.genlayer.com/address/0xb1748CD74F52A85dcC1c4C57144BC24F44e7a871), and the corrected AuthorityGate is deployed at [`0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e`](https://explorer-studio.genlayer.com/address/0xE2b921C8db13b9B2BdB7De0de4990Ff3Da6F807e). Both deployments finalized successfully. The gate accepted an exact authorized action and rejected an authorized action when its expected description hash was changed. See [DEPLOYMENT.md](DEPLOYMENT.md) for transaction hashes and readback evidence.
 
-A live three-domain matrix (money, security, data) was sealed. A multi-domain action required mask 7; one distinct approver remained insufficient, while a second approver moved it to AUTHORIZED. Wrong action/context/matrix hashes returned false. Ambiguous and out-of-scope actions both failed closed. The AuthorityGate reference consumer is deployed at [`0x6Db3601D964AEE358f25A500b09C577C27dF3Ed0`](https://explorer-studio.genlayer.com/address/0x6Db3601D964AEE358f25A500b09C577C27dF3Ed0); live evidence shows rejection before authorization, exact authorized execution, and replay rejection.
+The earlier addresses and lifecycle evidence remain documented as historical pre-fix deployments.
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for transaction-by-transaction evidence, readbacks, matrix definition hash, consumer proof, and verification record.
 

@@ -40,6 +40,7 @@ An action binds:
 - consumer context hash;
 - exact executable action hash;
 - hash of the frozen natural-language description;
+- domain-separated commitment over consumer context, action hash, and description hash;
 - consensus-derived required-dimension bitmask;
 - deterministic approval state.
 
@@ -72,9 +73,11 @@ The consumer-facing view requires:
     action_id
     context_hash
     action_hash
+    description_hash
+    action_commitment
     matrix_hash
 
-This prevents a valid approval from being casually reused for another payload, another matrix version, or another consumer context.
+The view checks the supplied description hash against the frozen classified description and recomputes the domain-separated commitment from the supplied context, action hash, and description hash. This prevents the consumer from substituting a benign description for a different executable payload.
 
 ## Why the matrix is immutable
 

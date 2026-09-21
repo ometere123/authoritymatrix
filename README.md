@@ -4,7 +4,7 @@ AuthorityMatrix is a reusable GenLayer Intelligent Contract for semantic separat
 
 A normal multisig answers one question: did enough keys approve? AuthorityMatrix answers a harder question first: which independent authority domains does this exact action touch?
 
-The authority matrix is configured deterministically. Each dimension has its own approvers and threshold. A proposed action is bound to an exact action hash, consumer context hash, and immutable sealed matrix hash. GenLayer consensus only classifies semantic jurisdiction. It never chooses approvers, thresholds, or whether missing approvals can be bypassed.
+The authority matrix is configured deterministically. Each dimension has its own approvers and threshold. A proposed action stores a canonical cryptographic binding over the exact action hash, frozen-description hash, consumer context hash, and immutable sealed matrix hash. Consumers must derive the expected description from their canonical executable payload and verify the description/action binding before execution. GenLayer consensus only classifies semantic jurisdiction. It never chooses approvers, thresholds, or whether missing approvals can be bypassed.
 
 There is **no frontend**. This repository is intentionally a standalone Intelligent Contract primitive.
 
@@ -67,7 +67,9 @@ The action does not become authorised until every required dimension reaches its
         |
     seal_matrix
         |
-    open_action(context_hash, action_hash, description)
+    open_action(matrix_id, context_hash, action_hash, description)
+        |
+        +-- stores binding_hash = keccak(canonical(context_hash, matrix_hash, action_hash, description_hash))
         |
     classify_action
         |
@@ -104,10 +106,12 @@ Consumers call:
         action_id,
         expected_context_hash,
         expected_action_hash,
+        expected_description_hash,
+        expected_binding_hash,
         expected_matrix_hash,
     )
 
-The included AuthorityGate contract is a minimal consumer. It proves a second Intelligent Contract can reject an unauthorised or mismatched action and prevent local replay.
+The included AuthorityGate recomputes the binding hash and asks AuthorityMatrix to verify the same context, action, description, binding, and matrix commitments. In a production integration, the consumer must derive the expected description hash from the exact payload it will execute; it must not accept the description/hash pair as independent caller claims.
 
 The context hash should commit to the intended consumer domain, for example:
 

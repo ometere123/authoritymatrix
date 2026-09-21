@@ -69,6 +69,7 @@ class Action:
     context_hash: str
     action_hash: str
     description_hash: str
+    binding_hash: str
     description: str
     status: u8
     required_mask: u256
@@ -88,6 +89,8 @@ class IAuthorityMatrix:
             action_id: u256,
             expected_context_hash: str,
             expected_action_hash: str,
+            expected_description_hash: str,
+            expected_binding_hash: str,
             expected_matrix_hash: str,
         ) -> bool: ...
 
@@ -166,6 +169,22 @@ def require_hex_digest(value: str, label: str) -> str:
 
 def hash_text(value: str) -> str:
     return Keccak256(str(value).encode("utf-8")).hexdigest()
+
+
+def action_binding_hash(
+    context_hash: str,
+    action_hash: str,
+    description_hash: str,
+    matrix_hash: str,
+) -> str:
+    """Commit a classified description to the exact action and consumer domain."""
+    payload = {
+        "action_hash": str(action_hash),
+        "context_hash": str(context_hash),
+        "description_hash": str(description_hash),
+        "matrix_hash": str(matrix_hash),
+    }
+    return hash_text(json.dumps(payload, sort_keys=True, separators=(",", ":")))
 
 
 def address_key(value) -> str:
@@ -624,6 +643,12 @@ ACTION_DESCRIPTION_JSON
         action.context_hash = context_hash
         action.action_hash = action_hash
         action.description_hash = hash_text(description)
+        action.binding_hash = action_binding_hash(
+            context_hash,
+            action_hash,
+            action.description_hash,
+            str(matrix.definition_hash),
+        )
         action.description = description
         action.status = u8(ACTION_PENDING)
         action.required_mask = u256(0)
@@ -639,6 +664,8 @@ ACTION_DESCRIPTION_JSON
             matrix_hash=str(matrix.definition_hash),
             context_hash=context_hash,
             action_hash=action_hash,
+            description_hash=str(action.description_hash),
+            binding_hash=str(action.binding_hash),
         ).emit()
         return action_id
 
@@ -803,6 +830,7 @@ ACTION_DESCRIPTION_JSON
             "context_hash": str(action.context_hash),
             "action_hash": str(action.action_hash),
             "description_hash": str(action.description_hash),
+            "binding_hash": str(action.binding_hash),
             "description": str(action.description),
             "status": int(action.status),
             "status_name": action_status_name(int(action.status)),
@@ -828,6 +856,8 @@ ACTION_DESCRIPTION_JSON
         action_id: u256,
         expected_context_hash: str,
         expected_action_hash: str,
+        expected_description_hash: str,
+        expected_binding_hash: str,
         expected_matrix_hash: str,
     ) -> bool:
         action = self._require_action(action_id)
@@ -835,12 +865,24 @@ ACTION_DESCRIPTION_JSON
             return False
         context_hash = str(expected_context_hash).strip().lower()
         action_hash = str(expected_action_hash).strip().lower()
+        description_hash = str(expected_description_hash).strip().lower()
+        binding_hash = str(expected_binding_hash).strip().lower()
         matrix_hash = str(expected_matrix_hash).strip().lower()
-        if len(context_hash) != 64 or len(action_hash) != 64 or len(matrix_hash) != 64:
+        values = (context_hash, action_hash, description_hash, binding_hash, matrix_hash)
+        if any(len(value) != 64 for value in values):
             return False
+        for value in values:
+            if any(char not in "0123456789abcdef" for char in value):
+                return False
+        computed_binding_hash = action_binding_hash(
+            context_hash, action_hash, description_hash, matrix_hash
+        )
         return (
             str(action.context_hash) == context_hash
             and str(action.action_hash) == action_hash
+            and str(action.description_hash) == description_hash
+            and str(action.binding_hash) == binding_hash
+            and str(action.binding_hash) == computed_binding_hash
             and str(action.matrix_hash) == matrix_hash
         )
 

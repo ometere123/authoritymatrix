@@ -3,6 +3,7 @@
 
 from genlayer import *
 
+import json
 from dataclasses import dataclass
 
 
@@ -14,6 +15,8 @@ class IAuthorityMatrix:
             action_id: u256,
             expected_context_hash: str,
             expected_action_hash: str,
+            expected_description_hash: str,
+            expected_binding_hash: str,
             expected_matrix_hash: str,
         ) -> bool: ...
 
@@ -27,8 +30,21 @@ class ExecutionReceipt:
     caller: Address
     action_id: u256
     action_hash: str
+    description_hash: str
+    binding_hash: str
     matrix_hash: str
     context_hash: str
+
+
+def action_binding_hash(context_hash: str, action_hash: str, description_hash: str, matrix_hash: str) -> str:
+    payload = {
+        "action_hash": str(action_hash),
+        "context_hash": str(context_hash),
+        "description_hash": str(description_hash),
+        "matrix_hash": str(matrix_hash),
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return Keccak256(canonical.encode("utf-8")).hexdigest()
 
 
 class AuthorityGate(gl.Contract):
@@ -56,14 +72,18 @@ class AuthorityGate(gl.Contract):
         self,
         action_id: u256,
         expected_action_hash: str,
+        expected_description_hash: str,
+        expected_binding_hash: str,
         expected_matrix_hash: str,
     ) -> None:
         action_hash = str(expected_action_hash).strip().lower()
+        description_hash = str(expected_description_hash).strip().lower()
+        binding_hash = str(expected_binding_hash).strip().lower()
         matrix_hash = str(expected_matrix_hash).strip().lower()
 
-        if len(action_hash) != 64 or len(matrix_hash) != 64:
+        if any(len(value) != 64 for value in (action_hash, description_hash, binding_hash, matrix_hash)):
             raise gl.vm.UserError("EXPECTED: action and matrix hashes must be 64 lowercase hex chars")
-        for text in (action_hash, matrix_hash):
+        for text in (action_hash, description_hash, binding_hash, matrix_hash):
             for char in text:
                 if char not in "0123456789abcdef":
                     raise gl.vm.UserError("EXPECTED: hashes must be lowercase hex")
@@ -71,11 +91,19 @@ class AuthorityGate(gl.Contract):
         if self.executions.get(action_hash) is not None:
             raise gl.vm.UserError("EXPECTED: action was already executed by this consumer")
 
+        expected_binding = action_binding_hash(
+            str(self.context_hash), action_hash, description_hash, matrix_hash
+        )
+        if binding_hash != expected_binding:
+            raise gl.vm.UserError("EXPECTED: description/action binding commitment does not match")
+
         matrix = IAuthorityMatrix(self.authority_matrix_address)
         if not matrix.view().is_authorized_for(
             action_id,
             str(self.context_hash),
             action_hash,
+            description_hash,
+            binding_hash,
             matrix_hash,
         ):
             raise gl.vm.UserError("EXPECTED: AuthorityMatrix authorization is not valid for this consumer")
@@ -84,6 +112,8 @@ class AuthorityGate(gl.Contract):
             caller=gl.message.sender_address,
             action_id=action_id,
             action_hash=action_hash,
+            description_hash=description_hash,
+            binding_hash=binding_hash,
             matrix_hash=matrix_hash,
             context_hash=str(self.context_hash),
         )
@@ -104,6 +134,8 @@ class AuthorityGate(gl.Contract):
             "caller": str(receipt.caller),
             "action_id": int(receipt.action_id),
             "action_hash": str(receipt.action_hash),
+            "description_hash": str(receipt.description_hash),
+            "binding_hash": str(receipt.binding_hash),
             "matrix_hash": str(receipt.matrix_hash),
             "context_hash": str(receipt.context_hash),
         }

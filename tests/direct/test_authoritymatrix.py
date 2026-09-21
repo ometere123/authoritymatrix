@@ -217,7 +217,7 @@ def test_out_of_scope_action_is_never_auto_authorized(
     contract.classify_action(action_id)
     action = contract.get_action(action_id)
     assert action["status_name"] == "OUT_OF_SCOPE"
-    assert contract.is_authorized_for(action_id, CTX, ACTION, action["matrix_hash"]) is False
+    assert contract.is_authorized_for(action_id, CTX, ACTION, action["description_hash"], action["binding_hash"], action["matrix_hash"]) is False
 
 
 def test_ambiguous_action_is_never_auto_authorized(
@@ -231,7 +231,7 @@ def test_ambiguous_action_is_never_auto_authorized(
     contract.classify_action(action_id)
     action = contract.get_action(action_id)
     assert action["status_name"] == "AMBIGUOUS"
-    assert contract.is_authorized_for(action_id, CTX, ACTION, action["matrix_hash"]) is False
+    assert contract.is_authorized_for(action_id, CTX, ACTION, action["description_hash"], action["binding_hash"], action["matrix_hash"]) is False
 
 
 def test_unrequired_dimension_cannot_approve(direct_vm, direct_deploy, direct_alice, direct_bob):
@@ -358,10 +358,45 @@ def test_authorized_action_binds_context_action_and_matrix_hash(
 
     action = contract.get_action(action_id)
     assert action["status_name"] == "AUTHORIZED"
-    assert contract.is_authorized_for(action_id, CTX, ACTION, action["matrix_hash"]) is True
-    assert contract.is_authorized_for(action_id, "44" * 32, ACTION, action["matrix_hash"]) is False
-    assert contract.is_authorized_for(action_id, CTX, ACTION_2, action["matrix_hash"]) is False
-    assert contract.is_authorized_for(action_id, CTX, ACTION, "55" * 32) is False
+    assert contract.is_authorized_for(action_id, CTX, ACTION, action["description_hash"], action["binding_hash"], action["matrix_hash"]) is True
+    assert contract.is_authorized_for(action_id, "44" * 32, ACTION, action["description_hash"], action["binding_hash"], action["matrix_hash"]) is False
+    assert contract.is_authorized_for(action_id, CTX, ACTION_2, action["description_hash"], action["binding_hash"], action["matrix_hash"]) is False
+    assert contract.is_authorized_for(action_id, CTX, ACTION, "55" * 32, action["binding_hash"], action["matrix_hash"]) is False
+    assert contract.is_authorized_for(action_id, CTX, ACTION, action["description_hash"], "66" * 32, action["matrix_hash"]) is False
+    assert contract.is_authorized_for(action_id, CTX, ACTION, action["description_hash"], action["binding_hash"], "55" * 32) is False
+
+
+def test_consumer_description_binding_rejects_a_different_payload_description(
+    direct_vm, direct_deploy, direct_alice, direct_bob
+):
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.16")
+    owner = direct_vm.sender
+    matrix_id, money, _, _ = create_matrix(contract, owner, direct_alice, direct_bob)
+    benign_description = "Change the UI background colour."
+    action_id = open_and_classify(
+        contract,
+        direct_vm,
+        matrix_id,
+        ["money"],
+        description=benign_description,
+    )
+    with direct_vm.prank(direct_alice):
+        contract.approve(action_id, money)
+
+    action = contract.get_action(action_id)
+    assert action["status_name"] == "AUTHORIZED"
+    assert len(action["description_hash"]) == 64
+    assert len(action["binding_hash"]) == 64
+    # The consumer derives this hash from the description canonically associated
+    # with its actual payload; it cannot substitute a different sensitive action.
+    assert contract.is_authorized_for(
+        action_id,
+        CTX,
+        ACTION,
+        "77" * 32,
+        action["binding_hash"],
+        action["matrix_hash"],
+    ) is False
 
 
 def test_approvals_cannot_be_revoked_after_authorization(
